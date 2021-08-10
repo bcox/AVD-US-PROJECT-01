@@ -57,21 +57,25 @@ interface Port-Channel1
    description connection to spine1
    ip address 192.168.2.1/30
    ipv6 address fc00:0:0:200::1/64
+   ip pim sparse-mode
 !
 interface Port-Channel2
    description connection to spine2
    ip address 192.168.2.5/30
    ipv6 address fc00:0:0:204::1/64
+   ip pim sparse-mode
 !
 interface Port-Channel3
    description connection to spine3
    ip address 192.168.2.9/30
    ipv6 address fc00:0:0:208::1/64
+   ip pim sparse-mode
 !
 interface Port-Channel4
    description connection to spine4
    ip address 192.168.2.11/30
    ipv6 address fc00:0:0:20c::1/64
+   ip pim sparse-mode
 !
 interface Ethernet1
    no switchport

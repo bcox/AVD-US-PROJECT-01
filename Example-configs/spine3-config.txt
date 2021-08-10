@@ -57,11 +57,13 @@ interface Port-Channel1
    description connection to uplink-1
    ip address 192.168.1.10/30
    ipv6 address fc00:0:0:108::2/64
+   ip pim sparse-mode
 !
 interface Port-Channel2
    description connection to uplink-2
    ip address 192.168.2.10/30
    ipv6 address fc00:0:0:208::2/64
+   ip pim sparse-mode
 !
 interface Port-Channel3
    description mesh link spine 2
@@ -92,11 +94,13 @@ interface Port-Channel13
    description connection to leaf 3
    ip address 192.168.5.9/30
    ipv6 address fc00:0:0:508::1/64
+   ip pim sparse-mode
 !
 interface Port-Channel14
    description connection to leaf 4
    ip address 192.168.6.9/30
    ipv6 address fc00:0:0:608::1/64
+   ip pim sparse-mode
 !
 interface Ethernet1
    no switchport
