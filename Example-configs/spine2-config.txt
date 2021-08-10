@@ -1,0 +1,241 @@
+!
+switchport default mode routed
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+logging buffered 64000 informational
+logging console critical
+logging monitor informational
+logging host 172.16.100.1 514
+logging source-interface Loopback0
+!
+hostname spine2
+ip name-server vrf default 172.16.100.17
+ip name-server vrf default 172.16.100.23
+!
+ntp server 172.16.101.2 source Management1
+ntp server 172.16.100.33 source Loopback0
+ntp server 172.16.100.34 source Loopback0
+!
+snmp-server community testing1 ro ipv6 IPV6-SNMP-ACCESS IPV4-SNMP-ACCESS
+snmp-server community test4321 ro ipv6 IPV6-SNMP-ACCESS IPV4-SNMP-ACCESS
+!
+spanning-tree mode mstp
+!
+service unsupported-transceiver <name> <key>
+!
+ip radius source-interface Loopback0
+ip tacacs source-interface Loopback0
+!
+tacacs-server host [% RADIUS-TACACS-PRI %]
+tacacs-server host [% RADIUS-TACACS-SEC %]
+tacacs-server key [% TACACS-KEY %]
+tacacs-server timeout 3
+!
+radius-server host [% RADIUS-TACACS-PRI %] auth-port 1645 acct-port 1646
+radius-server host [% RADIUS-TACACS-SEC %] auth-port 1645 acct-port 1646
+radius-server timeout 5
+radius-server retransmit 0
+radius-server key [% RADIUS-KEY %]
+!
+aaa authentication login default group radius local
+aaa authorization exec default local
+aaa authorization commands 15 default group tacacs+ none
+aaa accounting exec default start-stop group tacacs+
+aaa accounting system default start-stop group tacacs+
+aaa accounting commands 0-1,15 default stop-only group tacacs+
+!
+no aaa root
+!
+username admin privilege 15 role network-admin secret sha512 $6$fo0l1kEr17q/eMcb$ypHdL0mTS8fM/bAdp48kfoWKBdzaXnyFtSeh6DLmDlt3fCJj9nkRfKdcsB4pVfuCCn0wF2xCjiG8Z5MhtLkQB/
+!
+vrf instance MGMT
+!
+interface Port-Channel1
+   description connection to uplink-1
+   ip address 192.168.1.6/30
+   ipv6 address fc00:0:0:104::2/64
+!
+interface Port-Channel2
+   description connection to uplink-2
+   ip address 192.168.2.6/30
+   ipv6 address fc00:0:0:204::2/64
+!
+interface Port-Channel3
+   description mesh link spine 2
+   ip address 192.168.7.5/30
+   ipv6 address fc00:0:0:704::1/64
+!
+interface Port-Channel4
+   description mesh link spine 3
+   ip address 192.168.8.5/30
+   ipv6 address fc00:0:0:804::1/64
+!
+interface Port-Channel5
+   description mesh link spine 4
+   ip address 192.168.9.5/30
+   ipv6 address fc00:0:0:904::1/64
+!
+interface Port-Channel11
+   description connection to leaf 1
+   ip address 192.168.3.5/30
+   ipv6 address fc00:0:0:304::1/64
+!
+interface Port-Channel12
+   description connection to leaf 2
+   ip address 192.168.4.5/30
+   ipv6 address fc00:0:0:404::1/64
+!
+interface Port-Channel13
+   description connection to leaf 3
+   ip address 192.168.5.5/30
+   ipv6 address fc00:0:0:504::1/64
+!
+interface Port-Channel14
+   description connection to leaf 4
+   ip address 192.168.6.5/30
+   ipv6 address fc00:0:0:604::1/64
+!
+interface Ethernet1
+   no switchport
+   channel-group 1 mode active
+!
+interface Ethernet2
+   no switchport
+   channel-group 2 mode active
+!
+interface Ethernet3
+   no switchport
+   channel-group 3 mode active
+!
+interface Ethernet4
+   no switchport
+   channel-group 5 mode active
+!
+interface Ethernet5
+   no switchport
+!
+interface Ethernet11
+   no switchport
+   channel-group 11 mode active
+!
+interface Ethernet12
+   no switchport
+   channel-group 12 mode active
+!
+interface Ethernet13
+   no switchport
+   channel-group 13 mode active
+!
+interface Ethernet14
+   no switchport
+   channel-group 14 mode active
+!
+interface Management0
+   description oob_management
+   vrf MGMT
+   ip address 172.100.100.202/24
+   ipv6 address fc00:0:ffee:1::202/64
+!
+ipv6 access-list IPV6-MGMT-IN
+   10 permit ipv6 fe00::/64 any
+!
+ipv6 access-list standard IPV6-SNMP-ACCESS
+   10 permit fe00::12/127
+!
+ip access-list standard IPV4-SNMP-ACCESS
+   10 permit 172.16.0.0/26
+!
+ip access-list IPV4-MGMT-IN
+   10 permit ip 172.16.0.0/16 any
+   20 permit ip 192.186.0.0/16 any
+!
+ip routing
+no ip routing vrf MGMT
+!
+ip prefix-list IPV4_ASSIGNED_BLOCKS
+   seq 10 permit 192.168.0.0/16
+!
+ipv6 prefix-list IPV6_ASSIGNED_BLOCKS
+   seq 10 permit fe00::/16
+!
+route-map ASSIGNED_BLOCKS permit 5
+   match ip address prefix-list IPV4_ASSIGNED_BLOCKS
+!
+route-map ASSIGNED_BLOCKS permit 10
+   match ipv6 address prefix-list IPV6_ASSIGNED_BLOCKS
+!
+router bgp 65001
+   distance bgp 20 200 200
+   graceful-restart restart-time 300
+   graceful-restart
+   neighbor leaf peer group
+   neighbor leaf remote-as 65000
+   neighbor leaf password 7 ea8YOSd524M=
+   neighbor leaf send-community
+   neighbor mesh peer group
+   neighbor mesh remote-as 65001
+   neighbor mesh update-source Loopback0
+   neighbor mesh password 7 ZVeAa7eBSP8=
+   neighbor mesh send-community
+   neighbor uplink peer group
+   neighbor uplink remote-as 65100
+   neighbor uplink route-map ASSIGNED_BLOCKS out
+   neighbor uplink password 7 /3c7q1O9yyg=
+   neighbor uplink send-community
+   neighbor 192.168.1.5 peer group uplink
+   neighbor 192.168.2.5 peer group uplink
+   neighbor 192.168.3.6 peer group leaf
+   neighbor 192.168.4.6 peer group leaf
+   neighbor 192.168.5.6 peer group leaf
+   neighbor 192.168.6.6 peer group leaf
+   neighbor 192.168.255.101 peer group mesh
+   neighbor 192.168.255.103 peer group mesh
+   neighbor 192.168.255.104 peer group mesh
+   redistribute connected
+!
+ip tacacs source-interface Loopback0
+!
+banner login
+********************************************************************************
+                                WARNING
+
+Banner message
+
+********************************************************************************
+EOF
+!
+management api http-commands
+   ip access-group IPV4-MGNT-IN in
+   ipv6 access-group IPV6-MGNT-IN in
+   no shutdown
+   !
+   vrf MGMT
+     ip access-group IPV4-MGNT-IN in
+     ipv6 access-group IPV6-MGNT-IN in
+     no shutdown
+!
+management api gnmi
+   transport grpc default
+      vrf MGMT
+      ip access-group IPV4-MGNT-IN in
+      ipv6 access-group IPV6-MGNT-IN in
+!
+management api netconf
+   transport ssh default
+      vrf MGMT
+      ip access-group IPV4-MGNT-IN in
+      ipv6 access-group IPV6-MGNT-IN in
+!
+management console
+   idle-timeout 15
+!
+management ssh
+   ip access-group IPV4-MGNT-IN in
+   ipv6 access-group IPV6-MGNT-IN in
+   idle-timeout 15
+   authentication mode password
+!
+end
